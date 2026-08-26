@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dior.gg — Key Control Panel</title>
+<style>
+  :root{
+    --bg: #0a0b0f;
+    --panel: #12141a;
+    --panel-border: #23262f;
+    --panel-border-soft: #1b1d24;
+    --text: #f2f3f5;
+    --text-dim: #8b8f9a;
+    --text-faint: #5a5e6a;
+    --accent: #3b82f6;
+    --accent-soft: rgba(59,130,246,0.12);
+    --green: #22c55e;
+    --amber: #eab308;
+    --red: #ef4444;
+    --red-soft: rgba(239,68,68,0.12);
+    --radius: 10px;
+    --mono: 'SF Mono', 'JetBrains Mono', ui-monospace, Menlo, Consolas, monospace;
+    --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, Roboto, sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+
+  body{
+    margin:0;
+    background: var(--bg);
+    background-image:
+      radial-gradient(circle at 15% 0%, rgba(59,130,246,0.06), transparent 40%),
+      radial-gradient(circle at 85% 20%, rgba(59,130,246,0.04), transparent 35%);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    padding: 40px 48px 80px;
+  }
+
+  .wrap{ max-width: 1200px; margin: 0 auto; }
+
+  /* Header */
+  header{
+    display:flex;
+    align-items:flex-start;
+    justify-content:space-between;
+    margin-bottom: 32px;
+  }
+  h1{
+    font-size: 34px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    margin: 0;
+  }
+  .tagline{
+    color: var(--text-dim);
+    font-size: 13.5px;
+    margin-top: 4px;
+    letter-spacing: 0.01em;
+  }
+  .signout{
+    display:flex;
+    align-items:center;
+    gap: 8px;
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    color: var(--text);
+    padding: 10px 18px;
+    border-radius: var(--radius);
+    font-size: 13.5px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: border-color .15s ease, background .15s ease;
+  }
+  .signout:hover{ border-color:#3a3e4a; background:#161821; }
+
+  /* Stat cards */
+  .stats{
+    display:grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 18px;
+    margin-bottom: 26px;
+  }
+  .stat{
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    border-radius: 14px;
+    padding: 20px 22px;
+  }
+  .stat-top{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    color: var(--text-faint);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 14px;
+  }
+  .stat-icon{ width:16px; height:16px; opacity:0.9; }
+  .stat-num{
+    font-size: 30px;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+    font-variant-numeric: tabular-nums;
+  }
+  .stat.active .stat-icon{ color: var(--green); }
+  .stat.unused .stat-icon{ color: var(--accent); }
+  .stat.banned .stat-icon{ color: var(--red); }
+  .stat.total .stat-icon{ color: var(--accent); }
+
+  /* Toolbar */
+  .toolbar{
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    border-radius: 14px;
+    padding: 16px;
+    display:flex;
+    align-items:center;
+    gap: 12px;
+    margin-bottom: 22px;
+    flex-wrap: wrap;
+  }
+  .field{
+    background: #0d0f14;
+    border: 1px solid var(--panel-border);
+    border-radius: 8px;
+    color: var(--text);
+    font-size: 13.5px;
+    padding: 11px 14px;
+    outline: none;
+    font-family: var(--sans);
+    transition: border-color .15s ease;
+  }
+  .field:focus{ border-color: var(--accent); }
+  .field::placeholder{ color: var(--text-faint); }
+
+  #keyName{ flex: 1 1 220px; min-width: 180px; }
+  select.field{
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path d='M1 1l4 4 4-4' stroke='%238b8f9a' stroke-width='1.4' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 32px;
+    cursor: pointer;
+    min-width: 100px;
+  }
+  #qtySelect{ min-width: 92px; }
+
+  .qty-wrap, .dur-wrap{ position:relative; display:flex; align-items:center; }
+  .field-icon{
+    position:absolute; left:11px; pointer-events:none;
+    width:14px; height:14px; color: var(--accent);
+  }
+  .qty-wrap select, .dur-wrap select{ padding-left: 32px; }
+
+  .btn-generate{
+    display:flex;
+    align-items:center;
+    gap: 8px;
+    background: linear-gradient(180deg, #4c8dfb, #3b7bf0);
+    border: none;
+    color: #fff;
+    font-weight: 700;
+    font-size: 13.5px;
+    padding: 11px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    box-shadow: 0 4px 14px rgba(59,130,246,0.28);
+    transition: transform .1s ease, box-shadow .15s ease, filter .15s ease;
+    white-space: nowrap;
+  }
+  .btn-generate:hover{ filter: brightness(1.06); box-shadow: 0 6px 18px rgba(59,130,246,0.38); }
+  .btn-generate:active{ transform: translateY(1px); }
+  .btn-generate svg{ width:15px; height:15px; }
+
+  #searchInput{ flex: 1 1 200px; min-width: 160px; }
+  .search-wrap{ position:relative; flex: 1 1 200px; min-width: 160px; }
+  .search-wrap svg{ position:absolute; left:11px; top:50%; transform:translateY(-50%); width:14px; height:14px; color: var(--text-faint); }
+  .search-wrap input{ width:100%; padding-left: 32px; }
+
+  /* Table */
+  .table-card{
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    border-radius: 14px;
+    overflow: hidden;
+  }
+  table{ width:100%; border-collapse: collapse; }
+  thead th{
+    text-align:left;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--panel-border);
+  }
+  thead th.right, tbody td.right{ text-align: right; }
+  tbody td{
+    padding: 15px 20px;
+    font-size: 13.5px;
+    border-bottom: 1px solid var(--panel-border-soft);
+    vertical-align: middle;
+  }
+  tbody tr:last-child td{ border-bottom: none; }
+  tbody tr{ transition: background .12s ease; }
+  tbody tr:hover{ background: #161821; }
+
+  .cell-id{ color: var(--text-faint); font-family: var(--mono); font-size: 12.5px; }
+  .cell-name{ font-weight: 600; }
+  .cell-key{
+    font-family: var(--mono);
+    font-size: 12.5px;
+    color: #b9c3d6;
+    display:flex; align-items:center; gap:8px;
+  }
+  .copy-btn{
+    background:none; border:none; color: var(--text-faint); cursor:pointer;
+    padding: 2px; display:flex; opacity:0; transition: opacity .12s ease, color .12s ease;
+  }
+  tr:hover .copy-btn{ opacity:1; }
+  .copy-btn:hover{ color: var(--accent); }
+  .copy-btn svg{ width:13px; height:13px; }
+
+  .badge{
+    display:inline-flex; align-items:center; gap:5px;
+    font-size: 11.5px; font-weight: 700;
+    padding: 4px 10px; border-radius: 100px;
+    letter-spacing: 0.02em;
+  }
+  .badge-type{ background:#1a1d26; color:#a9b2c3; border: 1px solid #262a35; }
+  .badge-active{ background: rgba(34,197,94,0.12); color: var(--green); }
+  .badge-unused{ background: var(--accent-soft); color: #6ea8fd; }
+  .badge-expired{ background: var(--red-soft); color: #f87171; }
+
+  .cell-hwid{ color: var(--text-faint); font-family: var(--mono); font-size: 12px; }
+
+  .end-btn{
+    display:inline-flex; align-items:center; gap:6px;
+    background: var(--red-soft);
+    border: 1px solid rgba(239,68,68,0.25);
+    color: #f87171;
+    font-size: 12px; font-weight: 700;
+    padding: 7px 12px;
+    border-radius: 7px;
+    cursor: pointer;
+    transition: background .15s ease, border-color .15s ease;
+  }
+  .end-btn:hover{ background: rgba(239,68,68,0.2); border-color: rgba(239,68,68,0.4); }
+  .end-btn svg{ width:12px; height:12px; }
+
+  .empty-row td{
+    text-align:center;
+    padding: 64px 20px;
+    color: var(--text-faint);
+    font-size: 13.5px;
+    border-bottom: none;
+  }
+
+  /* Modal */
+  .modal-overlay{
+    position: fixed; inset:0;
+    background: rgba(5,6,9,0.7);
+    backdrop-filter: blur(3px);
+    display:flex; align-items:center; justify-content:center;
+    z-index: 100;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .18s ease;
+  }
+  .modal-overlay.show{ opacity:1; pointer-events:auto; }
+  .modal{
+    background: #14161d;
+    border: 1px solid #2a2e3a;
+    border-radius: 16px;
+    padding: 28px;
+    width: 380px;
+    max-width: calc(100vw - 40px);
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    transform: translateY(8px) scale(0.98);
+    transition: transform .18s ease;
+  }
+  .modal-overlay.show .modal{ transform: translateY(0) scale(1); }
+  .modal-icon{
+    width: 46px; height:46px;
+    border-radius: 50%;
+    background: var(--red-soft);
+    border: 1px solid rgba(239,68,68,0.3);
+    display:flex; align-items:center; justify-content:center;
+    margin-bottom: 16px;
+  }
+  .modal-icon svg{ width:22px; height:22px; color: var(--red); }
+  .modal h3{ margin:0 0 8px; font-size: 17px; font-weight: 800; }
+  .modal p{ margin:0 0 22px; color: var(--text-dim); font-size: 13.5px; line-height:1.55; }
+  .modal p strong{ color: var(--text); font-weight: 700; }
+  .modal-actions{ display:flex; gap:10px; }
+  .modal-actions button{
+    flex:1; padding: 11px; border-radius: 8px; font-size: 13.5px; font-weight: 700;
+    cursor:pointer; border: 1px solid transparent; transition: filter .15s ease, background .15s ease;
+    font-family: var(--sans);
+  }
+  .btn-cancel{ background:#1c1f28; border-color:#2a2e3a !important; color: var(--text); }
+  .btn-cancel:hover{ background:#22252f; }
+  .btn-confirm{ background: var(--red); color:#fff; }
+  .btn-confirm:hover{ filter: brightness(1.08); }
+
+  ::selection{ background: rgba(59,130,246,0.35); }
+
+  @media (max-width: 900px){
+    body{ padding: 24px 16px 60px; }
+    .stats{ grid-template-columns: repeat(2,1fr); }
+    table{ min-width: 760px; }
+    .table-card{ overflow-x: auto; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div>
+      <h1>Dior.gg</h1>
+      <div class="tagline">Elite license key control panel</div>
+    </div>
+    <button class="signout">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      Sign out
+    </button>
+  </header>
+
+  <div class="stats">
+    <div class="stat total">
+      <div class="stat-top">Total Keys
+        <svg class="stat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+      </div>
+      <div class="stat-num" id="statTotal">0</div>
+    </div>
+    <div class="stat active">
+      <div class="stat-top">Active
+        <svg class="stat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+      </div>
+      <div class="stat-num" id="statActive">0</div>
+    </div>
+    <div class="stat unused">
+      <div class="stat-top">Unused
+        <svg class="stat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/></svg>
+      </div>
+      <div class="stat-num" id="statUnused">0</div>
+    </div>
+    <div class="stat banned">
+      <div class="stat-top">Banned / Expired
+        <svg class="stat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><line x1="5.5" y1="5.5" x2="18.5" y2="18.5"/></svg>
+      </div>
+      <div class="stat-num" id="statBanned">0</div>
+    </div>
+  </div>
+
+  <div class="toolbar">
+    <input id="keyName" class="field" type="text" placeholder="Key label / customer name" maxlength="40">
+
+    <div class="dur-wrap">
+      <svg class="field-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 15"/></svg>
+      <select id="durSelect" class="field">
+        <option value="1d">1 Day</option>
+        <option value="3d">3 Day</option>
+        <option value="7d">Week</option>
+        <option value="30d">Month</option>
+        <option value="life">Lifetime</option>
+      </select>
+    </div>
+
+    <div class="qty-wrap">
+      <svg class="field-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+      <select id="qtySelect" class="field">
+        <option value="1">1 key</option>
+        <option value="5">5 keys</option>
+        <option value="10">10 keys</option>
+        <option value="15">15 keys</option>
+        <option value="20">20 keys</option>
+        <option value="50">50 keys</option>
+        <option value="100">100 keys</option>
+      </select>
+    </div>
+
+    <button class="btn-generate" id="genBtn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3-3.5 3.5zm-8.5 6.5L9 15"/></svg>
+      Generate Key
+    </button>
+
+    <div class="search-wrap">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input id="searchInput" class="field" type="text" placeholder="Search key or name...">
+    </div>
+  </div>
+
+  <div class="table-card">
+    <table>
+      <thead>
+        <tr>
+          <th style="width:70px">ID</th>
+          <th>Name</th>
+          <th>Key</th>
+          <th style="width:100px">Type</th>
+          <th style="width:110px">Status</th>
+          <th style="width:140px">HWID</th>
+          <th class="right" style="width:120px">Action</th>
+        </tr>
+      </thead>
+      <tbody id="tableBody">
+        <tr class="empty-row"><td colspan="7">No keys match — generate a new one above.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+</div>
+
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <div class="modal-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+    </div>
+    <h3>End this key?</h3>
+    <p>You're about to permanently end <strong id="modalKeyName">this key</strong>. It will stop working immediately and this can't be undone.</p>
+    <div class="modal-actions">
+      <button class="btn-cancel" id="modalCancel">Cancel</button>
+      <button class="btn-confirm" id="modalConfirm">Yes, end key</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  const DURATION_LABELS = { '1d':'1 Day', '3d':'3 Day', '7d':'Week', '30d':'Month', 'life':'Lifetime' };
+
+  let keys = [];
+  let nextId = 1;
+  let pendingDeleteId = null;
+
+  const tableBody = document.getElementById('tableBody');
+  const searchInput = document.getElementById('searchInput');
+  const keyNameInput = document.getElementById('keyName');
+  const durSelect = document.getElementById('durSelect');
+  const qtySelect = document.getElementById('qtySelect');
+  const genBtn = document.getElementById('genBtn');
+  const modalOverlay = document.getElementById('modalOverlay');
+  const modalKeyName = document.getElementById('modalKeyName');
+  const modalCancel = document.getElementById('modalCancel');
+  const modalConfirm = document.getElementById('modalConfirm');
+
+  function randomKey(){
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    const seg = () => Array.from({length:4}, () => chars[Math.floor(Math.random()*chars.length)]).join('');
+    return `DIOR-${seg()}-${seg()}-${seg()}`;
+  }
+
+  function padId(n){ return '#' + String(n).padStart(3,'0'); }
+
+  function renderStats(){
+    document.getElementById('statTotal').textContent = keys.length;
+    document.getElementById('statActive').textContent = keys.filter(k => k.status==='active').length;
+    document.getElementById('statUnused').textContent = keys.filter(k => k.status==='unused').length;
+    document.getElementById('statBanned').textContent = keys.filter(k => k.status==='expired').length;
+  }
+
+  function statusBadge(status){
+    if(status==='active') return `<span class="badge badge-active"><svg width="8" height="8" viewBox="0 0 8 8"><circle cx="4" cy="4" r="4" fill="currentColor"/></svg>Active</span>`;
+    if(status==='unused') return `<span class="badge badge-unused"><svg width="8" height="8" viewBox="0 0 8 8"><circle cx="4" cy="4" r="4" fill="currentColor"/></svg>Unused</span>`;
+    return `<span class="badge badge-expired"><svg width="8" height="8" viewBox="0 0 8 8"><circle cx="4" cy="4" r="4" fill="currentColor"/></svg>Expired</span>`;
+  }
+
+  function render(){
+    const q = searchInput.value.trim().toLowerCase();
+    const filtered = keys.filter(k =>
+      !q || k.key.toLowerCase().includes(q) || k.name.toLowerCase().includes(q)
+    );
+
+    if(filtered.length === 0){
+      tableBody.innerHTML = `<tr class="empty-row"><td colspan="7">${keys.length===0 ? 'No keys match — generate a new one above.' : 'No keys match your search.'}</td></tr>`;
+      renderStats();
+      return;
+    }
+
+    tableBody.innerHTML = filtered.map(k => `
+      <tr data-id="${k.id}">
+        <td class="cell-id">${padId(k.id)}</td>
+        <td class="cell-name">${escapeHtml(k.name)}</td>
+        <td>
+          <span class="cell-key">
+            ${k.key}
+            <button class="copy-btn" data-copy="${k.key}" title="Copy key">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            </button>
+          </span>
+        </td>
+        <td><span class="badge badge-type">${k.durationLabel}</span></td>
+        <td>${statusBadge(k.status)}</td>
+        <td class="cell-hwid">${k.hwid || 'Not bound'}</td>
+        <td class="right">
+          <button class="end-btn" data-end="${k.id}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            End Key
+          </button>
+        </td>
+      </tr>
+    `).join('');
+
+    renderStats();
+  }
+
+  function escapeHtml(str){
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  function generateKeys(){
+    const rawName = keyNameInput.value.trim();
+    const qty = parseInt(qtySelect.value, 10);
+    const durVal = durSelect.value;
+    const durationLabel = DURATION_LABELS[durVal];
+
+    for(let i=0; i<qty; i++){
+      const label = rawName ? (qty > 1 ? `${rawName} ${i+1}` : rawName) : `Unnamed Key`;
+      keys.unshift({
+        id: nextId++,
+        name: label,
+        key: randomKey(),
+        durationLabel,
+        status: 'unused',
+        hwid: null
+      });
+    }
+
+    keyNameInput.value = '';
+    render();
+  }
+
+  function openDeleteModal(id){
+    pendingDeleteId = id;
+    const k = keys.find(x => x.id === id);
+    modalKeyName.textContent = k ? `“${k.name}”` : 'this key';
+    modalOverlay.classList.add('show');
+  }
+
+  function closeDeleteModal(){
+    modalOverlay.classList.remove('show');
+    pendingDeleteId = null;
+  }
+
+  function confirmDelete(){
+    if(pendingDeleteId !== null){
+      keys = keys.filter(k => k.id !== pendingDeleteId);
+      render();
+    }
+    closeDeleteModal();
+  }
+
+  genBtn.addEventListener('click', generateKeys);
+  searchInput.addEventListener('input', render);
+
+  tableBody.addEventListener('click', (e) => {
+    const endBtn = e.target.closest('[data-end]');
+    if(endBtn){
+      openDeleteModal(parseInt(endBtn.dataset.end, 10));
+      return;
+    }
+    const copyBtn = e.target.closest('[data-copy]');
+    if(copyBtn){
+      const text = copyBtn.dataset.copy;
+      navigator.clipboard?.writeText(text).catch(()=>{});
+      const original = copyBtn.innerHTML;
+      copyBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
+      setTimeout(() => { copyBtn.innerHTML = original; }, 1000);
+    }
+  });
+
+  modalCancel.addEventListener('click', closeDeleteModal);
+  modalConfirm.addEventListener('click', confirmDelete);
+  modalOverlay.addEventListener('click', (e) => { if(e.target === modalOverlay) closeDeleteModal(); });
+  document.addEventListener('keydown', (e) => { if(e.key === 'Escape' && modalOverlay.classList.contains('show')) closeDeleteModal(); });
+
+  render();
+})();
+</script>
+</body>
+</html>
